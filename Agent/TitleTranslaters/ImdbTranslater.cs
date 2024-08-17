@@ -1,24 +1,33 @@
-﻿using System.Net;
+﻿using RestSharp;
+using System.Net;
 using System.Text.RegularExpressions;
+using System.Web;
 
 namespace Agent.TitleTranslaters
 {
     public class ImdbTranslater : ITitleTranslater
     {
-        public string TranslateTitle(string ForeignTitle)
+        private readonly RestClient _client;
+
+        public ImdbTranslater()
         {
-            using (var webClient = new WebClient())
-            {
-                webClient.Headers.Add(HttpRequestHeader.AcceptLanguage, "en-US,en;q=0.9;q=0.8");
+            this._client = new RestClient("https://www.imdb.com");
+            this._client.AddDefaultHeader("Accept-Language", "en-US,en;q=0.9;q=0.8");
+        }
 
-                ForeignTitle = ForeignTitle.Replace("-", "%20");
+        public string TranslateTitle(string title)
+        {
+            var request = new RestRequest("/find/");
+            request.AddQueryParameter("q", HttpUtility.UrlEncode(title));
+            request.AddQueryParameter("s", "tt");
+            request.AddQueryParameter("exact", "true");
 
-                string html = webClient.DownloadString($"https://www.imdb.com/find?q={ForeignTitle}&s=tt&exact=true");
+            var response = this._client.Get(request);
+            var content = response.Content;
 
-                Match match = Regex.Match(html, "<td class=\"result_text\"> <a .*?>(.*?)</a>");
+            var match = Regex.Match(content, "<td class=\"result_text\"> <a .*?>(.*?)</a>");
 
-                return match.Groups[1].Value;
-            }
+            return match.Groups[1].Value;
         }
     }
 }

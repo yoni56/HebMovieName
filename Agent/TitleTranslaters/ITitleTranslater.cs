@@ -2,6 +2,6 @@
 {
     public interface ITitleTranslater
     {
-        string TranslateTitle(string ForeignTitle);
+        string TranslateTitle(string title);
     }
 }
